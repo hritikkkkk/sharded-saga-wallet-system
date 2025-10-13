@@ -8,7 +8,6 @@ import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStep;
 import org.springframework.stereotype.Service;
 
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,13 +41,25 @@ public class UpdateTransactionStatus implements SagaStep {
         log.info("Update transaction status step executed successfully");
 
 
-
         return true;
     }
 
     @Override
     public boolean compensate(SagaContext context) {
-        return false;
+        Long transactionId = context.getLong("transactionId");
+        TransactionStatus originalTransactionStatus = TransactionStatus.valueOf(context.getString("originalTransactionStatus"));
+
+        log.info("Compensating transaction status for transaction {}", transactionId);
+
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        transaction.setStatus(originalTransactionStatus);
+        transactionRepository.save(transaction);
+
+        log.info("Transaction status compensated for transaction {}", transactionId);
+
+        return true;
     }
 
     @Override
