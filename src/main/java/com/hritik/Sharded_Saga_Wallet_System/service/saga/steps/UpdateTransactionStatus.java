@@ -4,7 +4,7 @@ import com.hritik.Sharded_Saga_Wallet_System.model.Transaction;
 import com.hritik.Sharded_Saga_Wallet_System.model.TransactionStatus;
 import com.hritik.Sharded_Saga_Wallet_System.repository.TransactionRepository;
 import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaContext;
-import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStep;
+import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStepInterface;
 import org.springframework.stereotype.Service;
 
 
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UpdateTransactionStatus implements SagaStep {
+public class UpdateTransactionStatus implements SagaStepInterface {
 
 
     private final TransactionRepository transactionRepository;

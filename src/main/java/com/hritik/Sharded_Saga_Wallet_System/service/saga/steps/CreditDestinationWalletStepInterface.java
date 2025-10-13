@@ -3,7 +3,7 @@ package com.hritik.Sharded_Saga_Wallet_System.service.saga.steps;
 import com.hritik.Sharded_Saga_Wallet_System.model.Wallet;
 import com.hritik.Sharded_Saga_Wallet_System.repository.WalletRepository;
 import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaContext;
-import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStep;
+import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStepInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CreditDestinationWalletStep implements SagaStep {
+public class CreditDestinationWalletStepInterface implements SagaStepInterface {
 
     private final WalletRepository walletRepository;
 
