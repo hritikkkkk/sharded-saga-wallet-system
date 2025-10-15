@@ -1,10 +1,12 @@
 package com.hritik.Sharded_Saga_Wallet_System.model;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.apache.calcite.model.JsonType;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -27,4 +29,7 @@ public class SagaInstance {
     @Column(name = "current_step", nullable = false)
     private String currentStep;
 
+    public void markAsRunning() {
+        this.status = SagaStatus.RUNNING;
+    }
 }
