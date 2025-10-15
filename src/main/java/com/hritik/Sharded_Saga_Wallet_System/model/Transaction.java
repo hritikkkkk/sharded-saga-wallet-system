@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "transaction")
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Data
 public class Transaction {
     @Id
@@ -41,9 +43,9 @@ public class Transaction {
     @Column(name = "transaction_type", nullable = false)
     private TransactionType type = TransactionType.TRANSFER;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "saga_instance_id", nullable = false)
+    @Column(name = "saga_instance_id")
     private Long sagaInstanceId;
 }

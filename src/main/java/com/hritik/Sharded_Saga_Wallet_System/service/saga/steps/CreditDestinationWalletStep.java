@@ -49,7 +49,7 @@ public class CreditDestinationWalletStep implements SagaStepInterface {
             context.put("originalToWalletBalance", currentBalance);
 
             BigDecimal newBalance = currentBalance.add(amount);
-            walletRepository.updateBalanceByUserId(toWalletId, newBalance);
+            walletRepository.updateBalanceByWalletId(toWalletId, newBalance);
 
             log.info("Wallet {} credited successfully. New balance: {}", toWalletId, newBalance);
             context.put("toWalletBalanceAfterCredit", newBalance);
@@ -90,7 +90,7 @@ public class CreditDestinationWalletStep implements SagaStepInterface {
             }
 
             BigDecimal newBalance = currentBalance.subtract(amount);
-            walletRepository.updateBalanceByUserId(toWalletId, newBalance);
+            walletRepository.updateBalanceByWalletId(toWalletId, newBalance);
 
             log.info("Credit compensated successfully. Wallet {} new balance: {}",
                     toWalletId, newBalance);

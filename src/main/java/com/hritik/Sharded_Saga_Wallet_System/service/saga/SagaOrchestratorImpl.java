@@ -15,6 +15,7 @@ import com.hritik.Sharded_Saga_Wallet_System.service.saga.SagaStepInterface;
 import com.hritik.Sharded_Saga_Wallet_System.service.saga.steps.SagaStepFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.core.type.TypeReference; // ✅ correct
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.dao.DataAccessException;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +52,7 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
                     .build();
 
             sagaInstance = sagaInstanceRepository.save(sagaInstance);
+
             log.info("Saga started successfully with id {}", sagaInstance.getId());
 
             return sagaInstance.getId();
@@ -64,7 +67,7 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public boolean executeStep(Long sagaInstanceId, String stepName) {
         log.info("Executing step '{}' for saga instance {}", stepName, sagaInstanceId);
 
@@ -80,6 +83,8 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
             SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaInstanceId)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Saga instance not found with id: " + sagaInstanceId));
+
+            System.out.println("**********saga instance get context"+sagaInstance.getContext());
 
             // Check if saga is in valid state for execution
             if (sagaInstance.getStatus() == SagaStatus.FAILED ||
@@ -127,7 +132,14 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
 
             // Parse saga context
             SagaContext sagaContext = parseSagaContext(sagaInstance.getContext());
-
+//            SagaContext sagaContext = objectMapper.readValue(sagaInstance.getContext(), SagaContext.class);
+            System.out.println("parsed saga context"+sagaContext.toString());
+//            Map<String, Object> contextMap = objectMapper.readValue(
+//                    sagaInstance.getContext(),
+//                    new TypeReference<Map<String, Object>>() {}
+//            );
+//
+//            SagaContext sagaContext = new SagaContext(contextMap);
             // Mark step as running
             sagaStepDB.markAsRunning();
             sagaStepRepository.save(sagaStepDB);
@@ -355,16 +367,29 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
         }
     }
 
+    /**
+     * FIXED: Parse JSON context string back to SagaContext with proper deserialization
+     */
     private SagaContext parseSagaContext(String contextJson) {
         try {
-            @SuppressWarnings("unchecked")
-            var data = objectMapper.readValue(contextJson, java.util.Map.class);
-            return SagaContext.builder().data(data).build();
+            // Deserialize JSON directly to Map<String, Object>
+            Map<String, Object> data = objectMapper.readValue(
+                    contextJson,
+                    new TypeReference<Map<String, Object>>() {}
+            );
+
+            log.debug("Deserialized saga context data: {}", data);
+
+            return SagaContext.builder()
+                    .data(data)
+                    .build();
+
         } catch (JsonProcessingException e) {
-            log.error("Error parsing saga context", e);
+            log.error("Error parsing saga context from JSON: {}", contextJson, e);
             throw new SagaException("Failed to parse saga context", e);
         }
     }
+
 
     private void updateStepAsFailed(Long sagaInstanceId, String stepName, String errorMessage) {
         try {

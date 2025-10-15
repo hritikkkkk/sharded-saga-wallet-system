@@ -26,7 +26,7 @@ public class SagaInstance {
     @Column(name = "context", columnDefinition = "json")
     private String context;
 
-    @Column(name = "current_step", nullable = false)
+    @Column(name = "current_step")
     private String currentStep;
 
     public void markAsRunning() {
