@@ -49,4 +49,12 @@ public class SagaStep {
     public void markAsFailed() {
         this.status = StepStatus.FAILED;
     }
+
+    public void markAsCompensating() {
+        this.status = StepStatus.COMPENSATING;
+    }
+
+    public void markAsCompensated() {
+        this.status = StepStatus.COMPENSATED;
+    }
 }

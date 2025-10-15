@@ -32,4 +32,20 @@ public class SagaInstance {
     public void markAsRunning() {
         this.status = SagaStatus.RUNNING;
     }
+
+    public void markAsFailed() {
+        this.status = SagaStatus.FAILED;
+    }
+
+    public void markAsCompensated() {
+        this.status = SagaStatus.COMPENSATED;
+    }
+
+    public void markAsCompleted() {
+        this.status = SagaStatus.COMPLETED;
+    }
+
+    public void markAsCompensating() {
+        this.status = SagaStatus.COMPENSATING;
+    }
 }
