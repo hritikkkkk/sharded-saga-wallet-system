@@ -102,5 +102,15 @@ public class WalletController {
         log.info("Wallet {} deactivated successfully", id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("{id}/activate")
+    public ResponseEntity<Void> activateWallet(@PathVariable Long id) {
+        log.info("Activating wallet {}", id);
+
+        walletService.activateWallet(id);
+
+        log.info("Wallet {} activated successfully");
+        return ResponseEntity.noContent().build();
+    }
 }
 

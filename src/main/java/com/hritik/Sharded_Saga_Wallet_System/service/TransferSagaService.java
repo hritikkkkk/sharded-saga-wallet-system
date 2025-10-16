@@ -29,11 +29,10 @@ public class TransferSagaService {
     @Transactional
     public Long initiateTransfer(Long fromWalletId, Long toWalletId,
                                  BigDecimal amount, String description) {
-        System.out.println("**********transferrring***********");
+
         log.info("Initiating transfer from wallet {} to wallet {} with amount {} and description '{}'",
                 fromWalletId, toWalletId, amount, description);
 
-        try {
             // Validate inputs
             validateTransferRequest(fromWalletId, toWalletId, amount);
 
@@ -69,13 +68,7 @@ public class TransferSagaService {
 
             return sagaInstanceId;
 
-        } catch (InvalidTransactionException | IllegalArgumentException e) {
-            log.error("Validation failed for transfer request", e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error initiating transfer", e);
-            throw new SagaException("Failed to initiate transfer", e);
-        }
+
     }
 
     @Transactional
@@ -107,30 +100,37 @@ public class TransferSagaService {
             log.info("Transfer saga {} completed successfully", sagaInstanceId);
 
         } catch (InsufficientBalanceException e) {
-            // Business exception - clean up and re-throw
-            log.error("Insufficient balance in saga {} at step {}", sagaInstanceId, e);
+
+            log.error("Insufficient balance in saga {}", sagaInstanceId, e);
             try {
                 sagaOrchestrator.failSaga(sagaInstanceId);
             } catch (Exception failEx) {
-                log.error("Failed to mark saga as failed", failEx);
+                log.error("Failed to mark saga as failed after insufficient balance", failEx);
             }
-            throw e; // Re-throw for proper error response
-
-        }
-
-        catch (SagaException e) {
-            log.error("Saga exception occurred during execution of saga {}", sagaInstanceId, e);
+            // ✅ RE-THROW THE ORIGINAL EXCEPTION - DON'T WRAP IT
             throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error executing saga {}", sagaInstanceId, e);
 
+        } catch (SagaException e) {
+            // Saga exception - mark as failed and RE-THROW AS-IS
+            log.error("Saga exception during execution of saga {}", sagaInstanceId, e);
+            try {
+                sagaOrchestrator.failSaga(sagaInstanceId);
+            } catch (Exception failEx) {
+                log.error("Failed to mark saga as failed after saga exception", failEx);
+            }
+            // ✅ RE-THROW THE ORIGINAL EXCEPTION - DON'T WRAP IT
+            throw e;
+
+        } catch (Exception e) {
+            // Only wrap truly unexpected exceptions
+            log.error("Unexpected error executing saga {}", sagaInstanceId, e);
             try {
                 sagaOrchestrator.failSaga(sagaInstanceId);
             } catch (Exception failException) {
                 log.error("Failed to properly fail saga {}", sagaInstanceId, failException);
             }
-
-            throw new SagaException("Failed to execute transfer saga", e);
+            // Wrap unexpected exceptions only
+            throw new SagaException("Failed to execute transfer saga: " + e.getMessage(), e);
         }
     }
 

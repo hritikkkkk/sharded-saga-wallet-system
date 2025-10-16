@@ -183,6 +183,24 @@ public class WalletService {
         }
     }
 
+    @Transactional
+    public void activateWallet(Long walletId) {
+        log.info("Activating wallet {}", walletId);
+
+        try {
+            Wallet wallet = getWalletById(walletId);
+            wallet.setIsActive(true);
+            walletRepository.save(wallet);
+
+            log.info("Wallet {} activated successfully", walletId);
+
+        } catch (DataAccessException e) {
+            log.error("Database error while activating wallet {}", walletId, e);
+            throw new WalletException("Failed to activating wallet due to database error", e);
+        }
+    }
+
+
     private void validateAmount(BigDecimal amount) {
         if (amount == null) {
             throw new IllegalArgumentException("Amount cannot be null");

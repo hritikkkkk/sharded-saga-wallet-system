@@ -68,7 +68,7 @@ public class DebitSourceWalletStep implements SagaStepInterface {
 
         } catch (InsufficientBalanceException e) {
             log.error("Insufficient balance for debit operation", e);
-            return false;
+            throw e;
         } catch (Exception e) {
             log.error("Error debiting source wallet", e);
             return false;

@@ -1,6 +1,8 @@
 package com.hritik.Sharded_Saga_Wallet_System.service.saga;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hritik.Sharded_Saga_Wallet_System.exceptions.InsufficientBalanceException;
+import com.hritik.Sharded_Saga_Wallet_System.exceptions.InvalidTransactionException;
 import com.hritik.Sharded_Saga_Wallet_System.exceptions.ResourceNotFoundException;
 import com.hritik.Sharded_Saga_Wallet_System.exceptions.SagaException;
 import com.hritik.Sharded_Saga_Wallet_System.model.SagaInstance;
@@ -84,7 +86,7 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Saga instance not found with id: " + sagaInstanceId));
 
-            System.out.println("**********saga instance get context"+sagaInstance.getContext());
+            System.out.println("**********saga instance get context" + sagaInstance.getContext());
 
             // Check if saga is in valid state for execution
             if (sagaInstance.getStatus() == SagaStatus.FAILED ||
@@ -133,7 +135,7 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
             // Parse saga context
             SagaContext sagaContext = parseSagaContext(sagaInstance.getContext());
 //            SagaContext sagaContext = objectMapper.readValue(sagaInstance.getContext(), SagaContext.class);
-            System.out.println("parsed saga context"+sagaContext.toString());
+            System.out.println("parsed saga context" + sagaContext.toString());
 //            Map<String, Object> contextMap = objectMapper.readValue(
 //                    sagaInstance.getContext(),
 //                    new TypeReference<Map<String, Object>>() {}
@@ -171,14 +173,37 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
                 return false;
             }
 
+        } catch (InsufficientBalanceException e) {
+            // ✅ Business exception - update step, log, and RE-THROW AS-IS
+            log.error("Insufficient balance during step '{}' for saga {}: {}",
+                    stepName, sagaInstanceId, e.getMessage());
+            updateStepAsFailed(sagaInstanceId, stepName, "Insufficient balance: " + e.getMessage());
+            throw e; // ✅ PRESERVE THE ORIGINAL EXCEPTION
+
+        } catch (ResourceNotFoundException e) {
+            // ✅ Resource not found - update step and RE-THROW AS-IS
+            log.error("Resource not found during step '{}' for saga {}: {}",
+                    stepName, sagaInstanceId, e.getMessage());
+            updateStepAsFailed(sagaInstanceId, stepName, "Resource not found: " + e.getMessage());
+            throw e; // ✅ PRESERVE THE ORIGINAL EXCEPTION
+
+        } catch (InvalidTransactionException e) {
+            // ✅ Invalid transaction - update step and RE-THROW AS-IS
+            log.error("Invalid transaction during step '{}' for saga {}: {}",
+                    stepName, sagaInstanceId, e.getMessage());
+            updateStepAsFailed(sagaInstanceId, stepName, "Invalid transaction: " + e.getMessage());
+            throw e; // ✅ PRESERVE THE ORIGINAL EXCEPTION
+
         } catch (JsonProcessingException e) {
             log.error("Error processing saga context for step '{}'", stepName, e);
             updateStepAsFailed(sagaInstanceId, stepName, "Context serialization error: " + e.getMessage());
             throw new SagaException("Failed to process saga context", e);
+
         } catch (Exception e) {
+            // Only wrap truly unexpected exceptions
             log.error("Unexpected error executing step '{}' for saga {}", stepName, sagaInstanceId, e);
             updateStepAsFailed(sagaInstanceId, stepName, "Unexpected error: " + e.getMessage());
-            return false;
+            throw new SagaException("Failed to execute step: " + e.getMessage(), e);
         }
     }
 
@@ -375,7 +400,8 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
             // Deserialize JSON directly to Map<String, Object>
             Map<String, Object> data = objectMapper.readValue(
                     contextJson,
-                    new TypeReference<Map<String, Object>>() {}
+                    new TypeReference<Map<String, Object>>() {
+                    }
             );
 
             log.debug("Deserialized saga context data: {}", data);
