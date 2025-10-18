@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -90,6 +89,12 @@ public class WalletController {
         Wallet wallet = walletService.getActiveWalletByUserId(userId);
 
         log.info("Credit successful for user {}", userId);
+        return ResponseEntity.ok(wallet);
+    }
+
+    @GetMapping("{userId}/activeWallet")
+    public ResponseEntity<Wallet> getActiveWallet(@PathVariable Long userId) {
+        Wallet wallet = walletService.getActiveWalletByUserId(userId);
         return ResponseEntity.ok(wallet);
     }
 

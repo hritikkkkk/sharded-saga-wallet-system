@@ -101,13 +101,7 @@ public class WalletService {
         validateAmount(amount);
 
         try {
-            Wallet wallet = walletRepository.findByIdWithLock(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Wallet not found for user: " + userId));
-
-            if (!wallet.getIsActive()) {
-                throw new WalletException("Wallet is not active for user: " + userId);
-            }
+            Wallet wallet = getActiveWalletByUserId(userId);
 
             if (wallet.getBalance().compareTo(amount) < 0) {
                 throw new InsufficientBalanceException(
@@ -116,7 +110,7 @@ public class WalletService {
             }
 
             BigDecimal newBalance = wallet.getBalance().subtract(amount);
-            walletRepository.updateBalanceByWalletId(userId, newBalance);
+            walletRepository.updateBalanceByWalletId(wallet.getId(), newBalance);
 
             log.info("Successfully debited {} from user {}. New balance: {}",
                     amount, userId, newBalance);
@@ -134,16 +128,10 @@ public class WalletService {
         validateAmount(amount);
 
         try {
-            Wallet wallet = walletRepository.findByIdWithLock(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Wallet not found for user: " + userId));
-
-            if (!wallet.getIsActive()) {
-                throw new WalletException("Wallet is not active for user: " + userId);
-            }
+            Wallet wallet = getActiveWalletByUserId(userId);
 
             BigDecimal newBalance = wallet.getBalance().add(amount);
-            walletRepository.updateBalanceByWalletId(userId, newBalance);
+            walletRepository.updateBalanceByWalletId(wallet.getId(), newBalance);
 
             log.info("Successfully credited {} to user {}. New balance: {}",
                     amount, userId, newBalance);
