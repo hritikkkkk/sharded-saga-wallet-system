@@ -86,8 +86,6 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Saga instance not found with id: " + sagaInstanceId));
 
-            System.out.println("**********saga instance get context" + sagaInstance.getContext());
-
             // Check if saga is in valid state for execution
             if (sagaInstance.getStatus() == SagaStatus.FAILED ||
                     sagaInstance.getStatus() == SagaStatus.COMPENSATING ||
@@ -134,15 +132,6 @@ public class SagaOrchestratorImpl implements SagaOrchestrator {
 
             // Parse saga context
             SagaContext sagaContext = parseSagaContext(sagaInstance.getContext());
-//            SagaContext sagaContext = objectMapper.readValue(sagaInstance.getContext(), SagaContext.class);
-            System.out.println("parsed saga context" + sagaContext.toString());
-//            Map<String, Object> contextMap = objectMapper.readValue(
-//                    sagaInstance.getContext(),
-//                    new TypeReference<Map<String, Object>>() {}
-//            );
-//
-//            SagaContext sagaContext = new SagaContext(contextMap);
-            // Mark step as running
             sagaStepDB.markAsRunning();
             sagaStepRepository.save(sagaStepDB);
 

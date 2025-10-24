@@ -109,11 +109,14 @@ public class WalletService {
                                 wallet.getBalance(), amount));
             }
 
-            BigDecimal newBalance = wallet.getBalance().subtract(amount);
-            walletRepository.updateBalanceByWalletId(wallet.getId(), newBalance);
+            int rowsUpdated = walletRepository.atomicDebit(wallet.getId(), amount);
+
+            if (rowsUpdated == 0) {
+                throw new WalletException("Failed to debit wallet - wallet may have become inactive or insufficient balance");
+            }
 
             log.info("Successfully debited {} from user {}. New balance: {}",
-                    amount, userId, newBalance);
+                    amount, userId);
 
         } catch (DataAccessException e) {
             log.error("Database error while debiting wallet for user {}", userId, e);
@@ -130,11 +133,15 @@ public class WalletService {
         try {
             Wallet wallet = getActiveWalletByUserId(userId);
 
-            BigDecimal newBalance = wallet.getBalance().add(amount);
-            walletRepository.updateBalanceByWalletId(wallet.getId(), newBalance);
+            int rowsUpdated = walletRepository.atomicCredit(wallet.getId(), amount);
+
+            if (rowsUpdated == 0) {
+                throw new WalletException("Failed to credit wallet - wallet may have become inactive");
+            }
+
 
             log.info("Successfully credited {} to user {}. New balance: {}",
-                    amount, userId, newBalance);
+                    amount, userId);
 
         } catch (DataAccessException e) {
             log.error("Database error while crediting wallet for user {}", userId, e);
